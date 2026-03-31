@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SLAM Launcher
+Name[ar]=منصة SLAM
+Comment=Unified SLAM Orchestration Platform (R3LIVE / SR-LIVO / ORB-SLAM3 / Livox Calib)
+Comment[ar]=منصة تشغيل وإدارة خوارزميات SLAM
+Exec=bash -c "cd '%APP_DIR%' && python3 '%APP_DIR%/main.py'"
+Icon=%APP_DIR%/assets/icon.png
+Terminal=false
+Categories=Science;Robotics;Education;
+Keywords=SLAM;ROS;LiDAR;Robotics;Mapping;Localization;
+StartupWMClass=slam_launcher
+StartupNotify=true

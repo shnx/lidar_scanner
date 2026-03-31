@@ -1,0 +1,64 @@
+packages:
+  r3live:
+    id: r3live
+    name_en: "R3LIVE"
+    name_ar: "آر3لايف"
+    description_en: "LiDAR-Inertial-Visual SLAM — Dense colored point cloud + trajectory"
+    description_ar: "خرائط النقاط الملونة والمسار ثلاثي الأبعاد"
+    workspace: "/opt/ros_workspaces/r3live_ws"
+    launch_script: "scripts/launch_r3live.sh"
+    rosmaster_port: 11311
+    outputs:
+      pointcloud: "/r3live/cloud_registered"
+      odometry: "/r3live/odometry"
+      image: "/r3live/camera/image"
+    icon: "assets/icons/lidar.png"
+    color: "#2ECC71"
+
+  livox_calib:
+    id: livox_calib
+    name_en: "Livox Camera Calibration"
+    name_ar: "معايرة الكاميرا"
+    description_en: "Extrinsic calibration — outputs YAML matrix"
+    description_ar: "معايرة الكاميرا وإخراج مصفوفة YAML"
+    workspace: "/opt/ros_workspaces/livox_calib_ws"
+    launch_script: "scripts/launch_livox_calib.sh"
+    rosmaster_port: 11312
+    outputs:
+      pointcloud: "/livox/lidar"
+      image: "/camera/image_raw"
+      calib_result: "/calibration/extrinsic"
+    icon: "assets/icons/calibration.png"
+    color: "#3498DB"
+
+  sr_livo:
+    id: sr_livo
+    name_en: "SR-LIVO"
+    name_ar: "إس آر ليفو"
+    description_en: "LiDAR-Visual-Inertial Odometry — Pose + point cloud"
+    description_ar: "تقدير الموضع والخريطة ثلاثية الأبعاد"
+    workspace: "/opt/ros_workspaces/sr_livo_ws"
+    launch_script: "scripts/launch_sr_livo.sh"
+    rosmaster_port: 11313
+    outputs:
+      pointcloud: "/cloud_registered"
+      odometry: "/Odometry"
+      image: "/camera/image"
+    icon: "assets/icons/odometry.png"
+    color: "#9B59B6"
+
+  orbslam:
+    id: orbslam
+    name_en: "ORB-SLAM3"
+    name_ar: "أورب سلام"
+    description_en: "RGB-D SLAM — Trajectory + sparse feature map"
+    description_ar: "خريطة المميزات والمسار ثلاثي الأبعاد"
+    workspace: "/opt/ros_workspaces/orbslam_ws"
+    launch_script: "scripts/launch_orbslam.sh"
+    rosmaster_port: 11314
+    outputs:
+      pointcloud: "/orb_slam3/map_points"
+      odometry: "/orb_slam3/camera_pose"
+      image: "/camera/image_raw"
+    icon: "assets/icons/slam.png"
+    color: "#E74C3C"

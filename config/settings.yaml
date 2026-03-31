@@ -1,0 +1,30 @@
+app:
+  language: "en"
+  theme: "dark"
+  recordings_dir: "~/slam_sessions"
+  auto_record: true
+  auto_recover: true
+  recovery_max_attempts: 3
+  recovery_delay_seconds: 5
+  rosmaster_start_timeout: 15
+  node_health_check_interval: 2
+  log_max_lines: 2000
+
+visualization:
+  point_size: 2.0
+  background_color: [0.05, 0.05, 0.08]
+  trajectory_color: [0.0, 1.0, 0.4]
+  point_cloud_colormap: "intensity"
+  max_points_display: 3000000
+  fps_target: 30
+  update_interval_ms: 100
+
+recording:
+  bag_compression: "lz4"
+  pcd_binary: true
+  trajectory_format: "tum"
+  auto_split_size_mb: 1024
+
+ros:
+  melodic_setup: "/opt/ros/melodic/setup.bash"
+  default_rosmaster_port: 11311
