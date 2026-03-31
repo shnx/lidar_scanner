@@ -23,6 +23,7 @@ from PyQt5.QtCore import Qt, QTimer, pyqtSignal, pyqtSlot, QSize
 from PyQt5.QtGui import QImage, QPixmap, QFont
 
 from core.ros_bridge import NormalizedPointCloud, NormalizedPose, NormalizedImage
+from .scale import px
 
 logger = logging.getLogger(__name__)
 
@@ -241,7 +242,7 @@ class VizWidget(QWidget):
     def _build_ui(self):
         root = QHBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
-        root.setSpacing(4)
+        root.setSpacing(px(4))
 
         # ── 3-D panel ────────────────────────────────────────────────
         self._viz_frame = QFrame()
@@ -260,8 +261,8 @@ class VizWidget(QWidget):
         # ── camera feed ──────────────────────────────────────────────
         self._cam_frame = QFrame()
         self._cam_frame.setObjectName("vizContainer")
-        self._cam_frame.setMinimumWidth(180)
-        self._cam_frame.setMaximumWidth(400)
+        self._cam_frame.setMinimumWidth(px(160))
+        self._cam_frame.setMaximumWidth(px(380))
         self._cam_frame.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         cl = QVBoxLayout(self._cam_frame)
         cl.setContentsMargins(4, 4, 4, 4)

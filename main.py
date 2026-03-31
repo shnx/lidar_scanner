@@ -8,6 +8,7 @@ Usage:
 
 import sys
 import os
+import re
 import argparse
 import logging
 from pathlib import Path
@@ -16,17 +17,29 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-# ── Qt platform safety (headless / Wayland fallback) ────────────────────────
+# ── Disable Qt's built-in DPI scaling ───────────────────────────────────────
+# On embedded X11 systems the GPU/DRM may report wrong DPI/resolution.
+# We handle scaling ourselves via gui.scale so Qt must not interfere.
+os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "0"
+os.environ["QT_SCREEN_SCALE_FACTORS"] = "1"
+os.environ.setdefault("QT_QPA_PLATFORM", "xcb")  # force X11 on embedded
+
+# ── Qt platform safety (headless fallback) ───────────────────────────────────
 if "DISPLAY" not in os.environ and "WAYLAND_DISPLAY" not in os.environ:
-    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    os.environ["QT_QPA_PLATFORM"] = "offscreen"
 
 import yaml
 from PyQt5.QtWidgets import QApplication, QSplashScreen, QLabel
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont, QFontDatabase, QPixmap
 
+# Disable Qt high-DPI scaling BEFORE QApplication is created
+QApplication.setAttribute(Qt.AA_DisableHighDpiScaling, True)
+QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, False)
+
 from gui.main_window import MainWindow
 from gui import i18n
+from gui import scale as ui_scale
 
 
 # ---------------------------------------------------------------------------
@@ -73,23 +86,33 @@ def _load_config() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Stylesheet
+# Stylesheet  (scaled for current screen resolution)
 # ---------------------------------------------------------------------------
 
-def _load_stylesheet(app: QApplication) -> None:
+def _scale_px_values(css: str, scale: float) -> str:
+    """Multiply every bare NNpx token in a QSS string by *scale*."""
+    if abs(scale - 1.0) < 0.01:
+        return css
+    def _rep(m: re.Match) -> str:
+        return f"{max(1, round(int(m.group(1)) * scale))}px"
+    return re.sub(r'\b(\d+)px\b', _rep, css)
+
+
+def _load_stylesheet(app: QApplication, scale: float = 1.0) -> None:
     qss_path = PROJECT_ROOT / "gui" / "styles.qss"
-    if qss_path.is_file():
-        with open(qss_path, "r", encoding="utf-8") as f:
-            app.setStyleSheet(f.read())
-    else:
+    if not qss_path.is_file():
         logging.warning(f"Stylesheet not found: {qss_path}")
+        return
+    with open(qss_path, "r", encoding="utf-8") as f:
+        css = f.read()
+    app.setStyleSheet(_scale_px_values(css, scale))
 
 
 # ---------------------------------------------------------------------------
 # Fonts
 # ---------------------------------------------------------------------------
 
-def _load_fonts() -> None:
+def _load_fonts(base_pt: int = 10) -> None:
     font_dir = PROJECT_ROOT / "assets" / "fonts"
     if font_dir.is_dir():
         for font_file in font_dir.glob("*.ttf"):
@@ -99,15 +122,45 @@ def _load_fonts() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Screen geometry & scale
+# ---------------------------------------------------------------------------
+
+def _detect_screen(app: QApplication) -> tuple:
+    """
+    Return (width, height, scale_factor) of the primary available screen.
+    Falls back to 1920×1080 if detection fails.
+    """
+    try:
+        screen = app.primaryScreen()
+        geo = screen.availableGeometry()
+        w, h = geo.width(), geo.height()
+        # Sanity-check: if the reported size is suspiciously small,
+        # trust physical size from the screen object instead
+        phys = screen.geometry()
+        if phys.width() > w:
+            w, h = phys.width(), phys.height()
+    except Exception:
+        w, h = 1920, 1080
+
+    if w < 320 or h < 240:          # completely bogus
+        w, h = 1920, 1080
+
+    scale = ui_scale.init(w, h)
+    return w, h, scale
+
+
+# ---------------------------------------------------------------------------
 # Splash screen
 # ---------------------------------------------------------------------------
 
-def _make_splash(app: QApplication) -> QSplashScreen:
+def _make_splash(app: QApplication, scale: float) -> QSplashScreen:
+    splash_size = ui_scale.px(320)
     icon_path = PROJECT_ROOT / "assets" / "icon.png"
     if icon_path.exists():
-        pix = QPixmap(str(icon_path)).scaled(320, 320, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        pix = QPixmap(str(icon_path)).scaled(
+            splash_size, splash_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
     else:
-        pix = QPixmap(320, 180)
+        pix = QPixmap(splash_size, max(1, round(splash_size * 0.56)))
         pix.fill(Qt.black)
 
     splash = QSplashScreen(pix, Qt.WindowStaysOnTopHint)
@@ -143,10 +196,20 @@ def main() -> int:
     app.setOrganizationName("SLAMLauncher")
     app.setApplicationVersion("1.0.0")
 
+    # ── Screen detection & scale ──────────────────────────────────────
+    sw, sh, scale = _detect_screen(app)
+    log.info(f"Screen: {sw}×{sh}  |  UI scale: {scale:.3f}")
+
+    # ── Base application font (pt units, DPI-independent) ────────────
+    # 10pt at 96 DPI ≈ 13px on 1920×1080; stays readable at all scales
+    base_pt = max(8, round(10 * scale))
+    app.setFont(QFont("Ubuntu", base_pt))
+
     # ── Load resources ───────────────────────────────────────────────
     config = _load_config()
+    config["screen"] = {"width": sw, "height": sh, "scale": scale}
     _load_fonts()
-    _load_stylesheet(app)
+    _load_stylesheet(app, scale)
 
     # ── i18n ─────────────────────────────────────────────────────────
     trans_path = config.pop("translations")
@@ -161,14 +224,17 @@ def main() -> int:
         return 1
 
     # ── Splash ───────────────────────────────────────────────────────
-    splash = _make_splash(app)
+    splash = _make_splash(app, scale)
 
     # ── Main window ──────────────────────────────────────────────────
     window = MainWindow(config)
 
     def _show_window():
         splash.finish(window)
-        window.show()
+        if ui_scale.is_small_screen():
+            window.showMaximized()   # fill all available pixels on small screens
+        else:
+            window.show()
         window.raise_()
 
     QTimer.singleShot(1200, _show_window)

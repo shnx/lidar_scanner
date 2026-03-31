@@ -11,6 +11,7 @@ from PyQt5.QtCore import Qt, pyqtSignal, QSize
 from PyQt5.QtGui import QColor, QPalette, QFont
 
 from . import i18n
+from .scale import px
 
 
 class PackageCard(QFrame):
@@ -27,22 +28,22 @@ class PackageCard(QFrame):
         self.setObjectName("packageCard")
         self.setCursor(Qt.PointingHandCursor)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.setMinimumHeight(100)
+        self.setMinimumHeight(px(90))
 
         self._build_ui()
         self.set_status("idle")
 
     def _build_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(14, 12, 14, 12)
-        layout.setSpacing(4)
+        layout.setContentsMargins(px(14), px(10), px(14), px(10))
+        layout.setSpacing(px(4))
 
         # ── header row ──────────────────────────────────────────────
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
 
         self._color_dot = QLabel("●")
-        self._color_dot.setFixedWidth(16)
+        self._color_dot.setFixedWidth(px(16))
         color = self._pkg_cfg.get("color", "#58a6ff")
         self._color_dot.setStyleSheet(f"color: {color}; font-size: 14px;")
 
@@ -136,8 +137,8 @@ class LauncherPanel(QWidget):
 
     def _build_ui(self):
         root = QVBoxLayout(self)
-        root.setContentsMargins(16, 16, 16, 16)
-        root.setSpacing(12)
+        root.setContentsMargins(px(14), px(14), px(14), px(14))
+        root.setSpacing(px(10))
 
         # ── section title ────────────────────────────────────────────
         self._lbl_select = QLabel()
@@ -147,7 +148,7 @@ class LauncherPanel(QWidget):
 
         # ── package grid ─────────────────────────────────────────────
         grid = QGridLayout()
-        grid.setSpacing(10)
+        grid.setSpacing(px(8))
         pkg_list = list(self._packages.items())
         for idx, (pkg_id, cfg) in enumerate(pkg_list):
             card = PackageCard(pkg_id, cfg)
@@ -165,17 +166,17 @@ class LauncherPanel(QWidget):
 
         self._btn_start = QPushButton()
         self._btn_start.setObjectName("btnStart")
-        self._btn_start.setMinimumHeight(40)
+        self._btn_start.setMinimumHeight(px(38))
         self._btn_start.clicked.connect(self._on_start)
 
         self._btn_stop = QPushButton()
         self._btn_stop.setObjectName("btnStop")
-        self._btn_stop.setMinimumHeight(40)
+        self._btn_stop.setMinimumHeight(px(38))
         self._btn_stop.clicked.connect(self._on_stop)
 
         self._btn_record = QPushButton()
         self._btn_record.setObjectName("btnRecord")
-        self._btn_record.setMinimumHeight(40)
+        self._btn_record.setMinimumHeight(px(38))
         self._btn_record.setCheckable(True)
         self._btn_record.toggled.connect(self._on_record_toggled)
 

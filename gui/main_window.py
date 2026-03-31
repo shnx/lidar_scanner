@@ -24,6 +24,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot, QObject, QTimer
 from PyQt5.QtGui import QIcon, QFont, QFontDatabase
 
 from . import i18n
+from .scale import px, is_small_screen
 from .launcher_panel import LauncherPanel
 from .status_panel import StatusPanel
 from .viz_widget import VizWidget
@@ -75,9 +76,22 @@ class MainWindow(QMainWindow):
         self._watchdog.attach(self._process_manager)
 
         self.setWindowTitle(i18n.t("app_title"))
-        self.resize(1400, 860)
-        self.setMinimumSize(1100, 700)
+        self._apply_screen_geometry()
         self._load_icon()
+
+    # ------------------------------------------------------------------
+    # Screen-relative sizing
+    # ------------------------------------------------------------------
+
+    def _apply_screen_geometry(self):
+        screen = QApplication.instance().primaryScreen()
+        geo = screen.availableGeometry()
+        sw, sh = geo.width(), geo.height()
+        win_w = int(sw * 0.94)
+        win_h = int(sh * 0.92)
+        self.resize(win_w, win_h)
+        self.setMinimumSize(max(px(640), int(sw * 0.40)),
+                            max(px(420), int(sh * 0.40)))
 
     # ------------------------------------------------------------------
     # UI construction
@@ -132,10 +146,10 @@ class MainWindow(QMainWindow):
     def _build_header(self) -> QWidget:
         bar = QWidget()
         bar.setObjectName("headerBar")
-        bar.setFixedHeight(60)
+        bar.setFixedHeight(px(60))
         hl = QHBoxLayout(bar)
-        hl.setContentsMargins(16, 0, 16, 0)
-        hl.setSpacing(12)
+        hl.setContentsMargins(px(16), 0, px(16), 0)
+        hl.setSpacing(px(12))
 
         titles = QVBoxLayout()
         titles.setSpacing(0)
@@ -151,7 +165,7 @@ class MainWindow(QMainWindow):
 
         self._btn_lang = QPushButton()
         self._btn_lang.setObjectName("btnLang")
-        self._btn_lang.setFixedSize(80, 30)
+        self._btn_lang.setFixedSize(px(80), px(30))
         self._btn_lang.clicked.connect(self._toggle_language)
         hl.addWidget(self._btn_lang)
 
@@ -164,28 +178,30 @@ class MainWindow(QMainWindow):
 
         # ── horizontal splitter lets both panels grow on maximize ────
         self._main_splitter = QSplitter(Qt.Horizontal)
-        self._main_splitter.setHandleWidth(6)
+        self._main_splitter.setHandleWidth(px(6))
         self._main_splitter.setChildrenCollapsible(False)
 
         # ── left panel: launcher + mini-logs ────────────────────────
         left_container = QWidget()
-        left_container.setMinimumWidth(320)
+        left_container.setMinimumWidth(px(300))
         left_layout = QVBoxLayout(left_container)
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_layout.setSpacing(0)
 
         left_splitter = QSplitter(Qt.Vertical)
-        left_splitter.setHandleWidth(4)
+        left_splitter.setHandleWidth(px(4))
         left_splitter.setChildrenCollapsible(False)
 
         self._launcher_panel = LauncherPanel(self._packages)
         left_splitter.addWidget(self._launcher_panel)
 
         self._status_panel_mini = StatusPanel()
-        self._status_panel_mini.setMinimumHeight(100)
-        self._status_panel_mini.setMaximumHeight(260)
+        self._status_panel_mini.setMinimumHeight(px(90))
+        self._status_panel_mini.setMaximumHeight(px(260))
         left_splitter.addWidget(self._status_panel_mini)
-        left_splitter.setSizes([520, 200])
+        # proportional vertical split: 70% launcher, 30% mini-log
+        left_splitter.setStretchFactor(0, 7)
+        left_splitter.setStretchFactor(1, 3)
 
         left_layout.addWidget(left_splitter)
 
@@ -194,7 +210,9 @@ class MainWindow(QMainWindow):
 
         self._main_splitter.addWidget(left_container)
         self._main_splitter.addWidget(self._viz_widget)
-        self._main_splitter.setSizes([440, 960])
+        # proportional horizontal split: 30% left, 70% viz
+        self._main_splitter.setStretchFactor(0, 3)
+        self._main_splitter.setStretchFactor(1, 7)
 
         layout.addWidget(self._main_splitter)
 
