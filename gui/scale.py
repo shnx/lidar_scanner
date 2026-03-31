@@ -16,7 +16,7 @@ Usage:
     widget.setMinimumHeight(px(100))
 """
 
-from typing import Optional
+from typing import Optional, Tuple
 
 # ── Internal state ────────────────────────────────────────────────────────────
 _factor: float = 1.0
@@ -53,7 +53,7 @@ def factor() -> float:
     return _factor
 
 
-def screen_size() -> tuple[int, int]:
+def screen_size() -> Tuple[int, int]:
     """Return the detected screen (width, height)."""
     return _screen_w, _screen_h
 
