@@ -225,7 +225,9 @@ class VizWidget(QWidget):
         self._settings = settings
         self._o3d_thread: Optional[Open3DThread] = None
         self._trajectory = TrajectoryBuffer()
+        self._last_frame: Optional[np.ndarray] = None
 
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self._build_ui()
 
         self._refresh_timer = QTimer(self)
@@ -258,7 +260,9 @@ class VizWidget(QWidget):
         # ── camera feed ──────────────────────────────────────────────
         self._cam_frame = QFrame()
         self._cam_frame.setObjectName("vizContainer")
-        self._cam_frame.setFixedWidth(280)
+        self._cam_frame.setMinimumWidth(180)
+        self._cam_frame.setMaximumWidth(400)
+        self._cam_frame.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         cl = QVBoxLayout(self._cam_frame)
         cl.setContentsMargins(4, 4, 4, 4)
         cl.setSpacing(4)
@@ -342,12 +346,12 @@ class VizWidget(QWidget):
     # Frame refresh
     # ------------------------------------------------------------------
 
-    def _refresh_frame(self):
-        if self._o3d_thread is None:
-            return
-        frame = self._o3d_thread.get_frame()
-        if frame is None:
-            return
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if self._last_frame is not None:
+            self._blit_frame(self._last_frame)
+
+    def _blit_frame(self, frame: np.ndarray):
         h, w, _ = frame.shape
         q_img = QImage(frame.tobytes(), w, h, w * 3, QImage.Format_RGB888)
         pix = QPixmap.fromImage(q_img).scaled(
@@ -356,3 +360,12 @@ class VizWidget(QWidget):
             Qt.SmoothTransformation
         )
         self._viz_label.setPixmap(pix)
+
+    def _refresh_frame(self):
+        if self._o3d_thread is None:
+            return
+        frame = self._o3d_thread.get_frame()
+        if frame is None:
+            return
+        self._last_frame = frame
+        self._blit_frame(frame)

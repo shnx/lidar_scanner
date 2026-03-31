@@ -160,30 +160,43 @@ class MainWindow(QMainWindow):
     def _build_main_tab(self):
         layout = QHBoxLayout(self._tab_main)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setSpacing(0)
+
+        # ── horizontal splitter lets both panels grow on maximize ────
+        self._main_splitter = QSplitter(Qt.Horizontal)
+        self._main_splitter.setHandleWidth(6)
+        self._main_splitter.setChildrenCollapsible(False)
 
         # ── left panel: launcher + mini-logs ────────────────────────
+        left_container = QWidget()
+        left_container.setMinimumWidth(320)
+        left_layout = QVBoxLayout(left_container)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(0)
+
         left_splitter = QSplitter(Qt.Vertical)
+        left_splitter.setHandleWidth(4)
+        left_splitter.setChildrenCollapsible(False)
 
         self._launcher_panel = LauncherPanel(self._packages)
         left_splitter.addWidget(self._launcher_panel)
 
         self._status_panel_mini = StatusPanel()
-        self._status_panel_mini.setMaximumHeight(220)
+        self._status_panel_mini.setMinimumHeight(100)
+        self._status_panel_mini.setMaximumHeight(260)
         left_splitter.addWidget(self._status_panel_mini)
         left_splitter.setSizes([520, 200])
 
-        left_wrapper = QWidget()
-        lw_layout = QVBoxLayout(left_wrapper)
-        lw_layout.setContentsMargins(0, 0, 0, 0)
-        lw_layout.addWidget(left_splitter)
-        left_wrapper.setFixedWidth(440)
+        left_layout.addWidget(left_splitter)
 
         # ── right panel: visualization ───────────────────────────────
         self._viz_widget = VizWidget(self._settings)
 
-        layout.addWidget(left_wrapper)
-        layout.addWidget(self._viz_widget, 1)
+        self._main_splitter.addWidget(left_container)
+        self._main_splitter.addWidget(self._viz_widget)
+        self._main_splitter.setSizes([440, 960])
+
+        layout.addWidget(self._main_splitter)
 
     def _build_statusbar(self):
         sb = QStatusBar()
