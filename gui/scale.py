@@ -16,7 +16,6 @@ Usage:
     widget.setMinimumHeight(px(100))
 """
 
-from __future__ import annotations
 from typing import Optional
 
 # ── Internal state ────────────────────────────────────────────────────────────
