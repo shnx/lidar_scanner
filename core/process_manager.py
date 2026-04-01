@@ -123,6 +123,9 @@ class ProcessManager:
             self._set_status(pkg_id, self.STATUS_STOPPED)
             with self._lock:
                 self._session = None
+        # Reset watchdog so manual stop clears crash state
+        if hasattr(self, '_watchdog') and self._watchdog:
+            self._watchdog.reset()
 
     def current_package(self) -> Optional[str]:
         with self._lock:
@@ -166,7 +169,8 @@ class ProcessManager:
             combined = " && ".join(source_cmds) + f" && env"
             result = subprocess.run(
                 ["bash", "-c", combined],
-                capture_output=True, text=True, timeout=10
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, timeout=10
             )
             if result.returncode == 0:
                 for line in result.stdout.splitlines():

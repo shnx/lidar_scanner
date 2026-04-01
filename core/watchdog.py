@@ -106,6 +106,9 @@ class NodeWatchdog:
                 "Manual intervention required.")
             if self.on_recovery_failed:
                 self.on_recovery_failed(pkg_id)
+            # Stop further checks for this package until user intervenes
+            self._last_crashed_pkg = None
+            self._attempt_count = self._max_attempts + 1  # lock out
             return
 
         self._attempt_count += 1
