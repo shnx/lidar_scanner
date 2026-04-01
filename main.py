@@ -93,7 +93,7 @@ def _scale_px_values(css: str, scale: float) -> str:
     """Multiply every bare NNpx token in a QSS string by *scale*."""
     if abs(scale - 1.0) < 0.01:
         return css
-    def _rep(m: re.Match) -> str:
+    def _rep(m) -> str:
         return f"{max(1, round(int(m.group(1)) * scale))}px"
     return re.sub(r'\b(\d+)px\b', _rep, css)
 
