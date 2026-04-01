@@ -16,7 +16,7 @@ Usage:
     widget.setMinimumHeight(px(100))
 """
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Tuple
 
 # ── Internal state ────────────────────────────────────────────────────────────
 _factor: float = 1.0
